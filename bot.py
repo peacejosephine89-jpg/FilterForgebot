@@ -1,79 +1,110 @@
 import os
 import sys
+import asyncio
 import logging
 
-# Force print to see if script starts
-print("=" * 50)
-print("Bot script started!")
-print(f"Python version: {sys.version}")
-print(f"Current directory: {os.getcwd()}")
-print(f"Files in directory: {os.listdir('.')}")
-print("=" * 50)
+# FORCE all output to be visible immediately
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
 
-# Set up logging
+print("=" * 60, flush=True)
+print("BOT STARTING - Phase 1: Initialization", flush=True)
+print(f"Python version: {sys.version}", flush=True)
+print(f"Current directory: {os.getcwd()}", flush=True)
+print("=" * 60, flush=True)
+
+# Configure logging to also print to console
 logging.basicConfig(
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger(__name__)
 
-# Try to import required libraries
+print("Phase 2: Importing libraries...", flush=True)
+
 try:
-    print("Importing telegram...")
     from telegram import Update
     from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-    print("✓ Telegram imported")
+    print("✓ python-telegram-bot imported", flush=True)
 except Exception as e:
-    print(f"❌ Failed to import telegram: {e}")
+    print(f"❌ Failed to import telegram: {e}", flush=True)
     sys.exit(1)
 
 try:
-    print("Importing PIL...")
     from PIL import Image, ImageFilter
-    print("✓ PIL imported")
+    print("✓ Pillow imported", flush=True)
 except Exception as e:
-    print(f"❌ Failed to import PIL: {e}")
+    print(f"❌ Failed to import Pillow: {e}", flush=True)
     sys.exit(1)
 
-# Get bot token
+print("Phase 3: Getting bot token...", flush=True)
 TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
-print(f"Bot token loaded: {'✅ Yes' if TOKEN else '❌ No'}")
 
 if not TOKEN:
-    logger.error("TELEGRAM_BOT_TOKEN environment variable not set!")
-    print("❌ ERROR: TELEGRAM_BOT_TOKEN not found!")
+    print("❌ ERROR: TELEGRAM_BOT_TOKEN environment variable not set!", flush=True)
+    print("Please add it in Render dashboard: Environment → Environment Variables", flush=True)
     sys.exit(1)
 
-# Simple start command
+print(f"✓ Bot token loaded (length: {len(TOKEN)})", flush=True)
+
+# Simple command handlers for testing
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(f"Received /start from user {update.effective_user.id}")
-    await update.message.reply_text("Hello! I am alive! Send me a photo.")
+    user = update.effective_user
+    print(f"📨 Received /start from {user.first_name} (ID: {user.id})", flush=True)
+    await update.message.reply_text(
+        "🎉 Bot is alive and working!\n\n"
+        "Send me a photo, then use:\n"
+        "/blur - Apply blur\n"
+        "/contour - Detect edges\n"
+        "/rotate - Rotate 90°\n"
+        "/segment - B&W conversion"
+    )
 
-# Simple photo handler
+async def blur(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🔍 Processing blur... (demo mode)")
+
+async def contour(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("📐 Processing contour... (demo mode)")
+
+async def rotate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🔄 Processing rotate... (demo mode)")
+
+async def segment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("⚫ Processing segment... (demo mode)")
+
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(f"Received photo from user {update.effective_user.id}")
-    await update.message.reply_text("Thanks for the photo! (processing coming soon)")
+    print(f"📸 Received photo from user {update.effective_user.id}", flush=True)
+    await update.message.reply_text("📷 Photo received! Use /blur, /contour, /rotate, or /segment")
 
-# Main function
+print("Phase 4: Building application...", flush=True)
+
 def main():
-    print("\n🤖 Creating bot application...")
-    application = Application.builder().token(TOKEN).build()
-    
-    print("Adding handlers...")
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
-    
-    print("Starting polling...")
-    print("✅ Bot is running! Waiting for messages...\n")
-    
-    # Start the bot
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    try:
+        # Create application
+        application = Application.builder().token(TOKEN).build()
+        
+        # Add handlers
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("blur", blur))
+        application.add_handler(CommandHandler("contour", contour))
+        application.add_handler(CommandHandler("rotate", rotate))
+        application.add_handler(CommandHandler("segment", segment))
+        application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+        
+        print("✓ Application built successfully", flush=True)
+        print("=" * 60, flush=True)
+        print("✅ BOT IS RUNNING! Waiting for messages...", flush=True)
+        print("=" * 60, flush=True)
+        
+        # Start polling (this blocks until stopped)
+        application.run_polling(allowed_updates=Update.ALL_TYPES)
+        
+    except Exception as e:
+        print(f"❌ Fatal error in main: {e}", flush=True)
+        import traceback
+        traceback.print_exc(file=sys.stdout)
+        sys.exit(1)
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        print(f"❌ Fatal error: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+    main()
