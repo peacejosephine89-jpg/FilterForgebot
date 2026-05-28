@@ -1,6 +1,6 @@
 services:
   - type: worker
-    name: telegram-image-bot
+    name: filterforgebot-worker
     runtime: python
     repo: https://github.com/peacejosephine89-jpg/FilterForgebot
     plan: free
@@ -8,4 +8,4 @@ services:
       - key: TELEGRAM_BOT_TOKEN
         sync: false
     buildCommand: pip install -r requirements.txt
-    startCommand: python bot.py
+    startCommand: python -u bot.py
