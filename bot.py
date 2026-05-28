@@ -4,10 +4,6 @@ import io
 from PIL import Image, ImageFilter
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-from starlette.applications import Starlette
-from starlette.routing import Route
-from starlette.responses import JSONResponse
-import uvicorn
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -100,31 +96,21 @@ async def rotate(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def segment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await handle_filter(update, context, "segment", apply_segment)
 
-# Create bot application
-application = Application.builder().token(TOKEN).build()
-application.add_handler(CommandHandler("start", start))
-application.add_handler(CommandHandler("blur", blur))
-application.add_handler(CommandHandler("contour", contour))
-application.add_handler(CommandHandler("rotate", rotate))
-application.add_handler(CommandHandler("segment", segment))
-application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
-
-# Webhook handler
-async def telegram_webhook(request):
-    body = await request.json()
-    update = Update.de_json(body, application.bot)
-    await application.process_update(update)
-    return JSONResponse({"status": "ok"})
-
-async def health(request):
-    return JSONResponse({"status": "healthy"})
-
-# Create Starlette app
-starlette_app = Starlette(debug=False, routes=[
-    Route("/webhook", telegram_webhook, methods=["POST"]),
-    Route("/health", health, methods=["GET"]),
-])
-
+# Main entry point - SIMPLE POLLING MODE
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    uvicorn.run(starlette_app, host="0.0.0.0", port=port)
+    print("🤖 Starting bot in polling mode...")
+    
+    # Create application
+    application = Application.builder().token(TOKEN).build()
+    
+    # Add handlers
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("blur", blur))
+    application.add_handler(CommandHandler("contour", contour))
+    application.add_handler(CommandHandler("rotate", rotate))
+    application.add_handler(CommandHandler("segment", segment))
+    application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    
+    # Start polling (no webhook needed!)
+    print("✅ Bot is running! Press Ctrl+C to stop.")
+    application.run_polling()
