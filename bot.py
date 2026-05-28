@@ -1,6 +1,7 @@
 import os
 import logging
 import io
+import asyncio
 from PIL import Image, ImageFilter
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
@@ -11,6 +12,10 @@ logger = logging.getLogger(__name__)
 
 # Bot token from environment variable
 TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
+
+if not TOKEN:
+    logger.error("TELEGRAM_BOT_TOKEN environment variable not set!")
+    exit(1)
 
 # Filter functions
 async def apply_blur(image_path: str, output_path: str):
@@ -96,9 +101,10 @@ async def rotate(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def segment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await handle_filter(update, context, "segment", apply_segment)
 
-# Main entry point - SIMPLE POLLING MODE
+# Main entry point
 if __name__ == "__main__":
     print("🤖 Starting bot in polling mode...")
+    print(f"Bot token loaded: {'✅ Yes' if TOKEN else '❌ No'}")
     
     # Create application
     application = Application.builder().token(TOKEN).build()
@@ -111,6 +117,6 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("segment", segment))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     
-    # Start polling (no webhook needed!)
-    print("✅ Bot is running! Press Ctrl+C to stop.")
-    application.run_polling()
+    # Start polling
+    print("✅ Bot is running! Waiting for messages...")
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
